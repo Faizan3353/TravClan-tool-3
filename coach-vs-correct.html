@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coach vs. Correct — EQ Conversation Simulator</title>
+<style>
+:root{--bg:#0d1420;--card:#152033;--line:#243550;--tx:#e8eef7;--mu:#8fa3bf;--ac:#3ddbb0;--wn:#f5b942;--bd:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#17304a,transparent),var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid var(--line)}
+h1{font:700 18px Georgia,serif;margin:0}h1 span{color:var(--ac)}small,.mu{color:var(--mu)}
+button{font:inherit;cursor:pointer}.btn{background:var(--ac);color:#062;border:0;border-radius:8px;padding:9px 16px;font-weight:700}.ghost{background:none;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:7px 12px}
+main{max-width:1080px;margin:20px auto;padding:0 16px;display:grid;grid-template-columns:1fr 300px;gap:18px}
+@media(max-width:820px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);font-weight:700}
+#chat{display:flex;flex-direction:column;gap:10px;margin:14px 0;max-height:300px;overflow:auto}
+.b{max-width:85%;padding:10px 13px;border-radius:12px;animation:f .35s}.m{align-self:flex-end;background:#1e4a5e}.e{align-self:flex-start;background:#26344d}
+.b i{display:block;font-size:11px;color:var(--mu);font-style:normal;margin-bottom:2px}
+@keyframes f{from{opacity:0;transform:translateY(6px)}}
+.opt{display:block;width:100%;text-align:left;background:#101a2b;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:9px;transition:.15s}
+.opt:hover{border-color:var(--ac);transform:translateX(3px)}.opt b{color:var(--ac);margin-right:8px}
+.bar{height:8px;background:#0b1424;border-radius:5px;overflow:hidden;margin:4px 0 11px}.bar div{height:100%;background:var(--ac);transition:width .6s}
+.steps{display:flex;gap:6px;margin-bottom:10px}.steps span{flex:1;height:4px;border-radius:3px;background:var(--line)}.steps .on{background:var(--ac)}
+.chip{padding:2px 9px;border-radius:9px;font-size:12px;font-weight:700}.Strong{background:#134d3f;color:var(--ac)}.Moderate{background:#5a4514;color:var(--wn)}.Developing{background:#5a2222;color:var(--bd)}
+table{width:100%;border-collapse:collapse}td{padding:8px 4px;border-bottom:1px solid var(--line)}
+#ov{position:fixed;inset:0;z-index:9;display:none}#sp{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(5,9,16,.82);transition:.35s;pointer-events:none}
+#tp{position:fixed;width:340px;max-width:92vw;background:#fff;color:#12203a;border-radius:14px;padding:18px;box-shadow:0 10px 40px #0008;transition:.35s}
+#tp h3{margin:0 0 6px;font:700 17px Georgia,serif}#tp .why{background:#e9fbf5;border-left:3px solid #12b98a;padding:8px 10px;margin:10px 0;font-size:13px;border-radius:4px}
+#tp .nav{display:flex;justify-content:space-between;align-items:center;margin-top:10px}#tp .btn{background:#12203a;color:#fff}#tp a{color:#667;cursor:pointer;font-size:13px}
+</style></head><body>
+<header><h1>Coach <span>vs.</span> Correct <small>· EQ Conversation Simulator</small></h1><div><button class="ghost" onclick="tour(0)">↺ Replay tour</button></div></header>
+<main id="app"></main>
+<div id="ov"><div id="sp"></div><div id="tp"></div></div>
+<script>
+const D=['Empathy','Inquiry','Accountability','Psychological safety','Coaching orientation','Specificity'];
+const R1=[
+{t:"We've already discussed this. You need to be more careful.",s:[0,0,2,0,0,1],k:'def',k2:'A',r:"I… I know. I'm sorry. I'm trying to be careful. It won't happen again."},
+{t:"It's okay. You're still new. Don't worry about it.",s:[2,0,0,1,0,0],k:'avo',k2:'B',r:"Oh — thanks. I appreciate that. I'll try to do better."},
+{t:"Walk me through what happened. Where did you become unsure?",s:[3,3,2,3,3,2],k:'exp',k2:'C',r:"Honestly? When a client changes dates after payment, I never know whether to amend or rebook. I didn't want to ask a third time."},
+{t:"This is the third time you've made this mistake. Why aren't you following the process?",s:[0,0,3,0,0,2],k:'def',k2:'D',r:"I am following it… I think. I'm sorry. I don't know what else to say."}];
+const R2={
+def:[{t:"I'm not trying to blame you. Help me understand — what makes this step hard?",s:[3,3,1,3,2,2],r:"It's the amendment screen. Two similar buttons, and I never know which. I was scared of looking incompetent.",o:1},
+{t:"Just follow the checklist next time. I don't have time for excuses.",s:[0,0,2,0,0,1],r:"Okay. Sorry."},
+{t:"Forget it, I'll fix this booking myself.",s:[1,0,0,1,0,1],r:"Oh. Okay. Thank you."}],
+avo:[{t:"I appreciate that. I do want this to stop repeating though — which part feels unclear?",s:[2,3,3,3,2,2],r:"…The amendment step, mostly. I wasn't sure which option to pick.",o:1},
+{t:"Good. Just double-check before submitting.",s:[1,0,1,1,0,1],r:"Sure, I will."},
+{t:"No, it's not okay — it's costing us refunds.",s:[0,0,3,0,0,2],r:"I understand. I'll be careful."}],
+exp:[{t:"Thank you for telling me. That's useful. Which screen is the least clear — can you show me?",s:[3,3,2,3,3,3],r:"Here — these two buttons look identical. I guessed each time.",o:1},
+{t:"You should've asked me. The rule is: amend if the payment is captured.",s:[1,0,2,1,1,2],r:"Got it. I'll ask next time."},
+{t:"So you just didn't know. That's fine.",s:[2,1,0,2,0,0],r:"Right. Thanks."}]};
+const R3=[{t:"What would help you feel confident? Let's agree a plan: I'll shadow one booking, and you flag when you're unsure — no judgement.",s:[3,2,3,3,3,3],r:"That works. I'd ask sooner if I knew it was okay to."},
+{t:"Here's a one-page guide. Follow it exactly and we'll review errors weekly.",s:[1,0,3,1,1,2],r:"Okay. I'll follow it."},
+{t:"Let's leave it there. I'm sure you'll get it.",s:[2,0,0,2,0,0],r:"Thanks."}];
+const INS={A:"You opened with a reminder and a warning. It states accountability, but it names no observable behaviour and invites defensiveness rather than disclosure.",
+B:"You protected the relationship first, which shows empathy. But reassurance closed the door on the real issue and the performance gap went unaddressed.",
+C:"You opened with curiosity and located the uncertainty rather than the fault. That is the single strongest move available and it surfaced the root cause in Round 1.",
+D:"You named the pattern, but the 'why' question reads as an accusation. The employee's stress response shuts down disclosure, which is the opposite of what you need."};
+const WK={0:"Name the employee's likely feeling before moving to the fix (“This step looks confusing — I'd be frustrated too”).",1:"Ask one open question before advising: “What were you seeing when you decided?”",2:"Keep the standard visible: “I need this to stop recurring, so let's work out how.”",3:"Normalise uncertainty explicitly: “I'd rather you ask than guess. Asking is safe here.”",4:"Move from fixing output to building capability — ask what they'd do differently, then agree a practice step.",5:"Anchor on the specific, observable moment (“the amendment on the 14th booking”) rather than the person."};
+const TOUR=[
+{h:"Welcome to Coach vs. Correct",b:"A 5-minute simulator where you handle a real-feeling coaching moment, and get scored on how you did it, not just what you said.",w:"Goal: shift managers from Correction to Coaching in a risk-free space, before the live conversation."},
+{e:'#scene',h:"A realistic pressure scenario",b:"You're a busy manager. A new joiner repeated the same booking error for the third time. Read the context: you're frustrated, and time is short.",w:"Realistic pressure creates the same reactive instincts managers show on the job."},
+{e:'#choices',h:"Your decision",b:"Choose what you'd actually say. There's no single 'right' answer: every option carries trade-offs across six behaviours.",w:"Multi-dimensional feedback avoids the ‘guess the right answer’ trap and builds judgement."},
+{e:'#chat',h:"The employee reacts",b:"Branching engine: what you say changes how the employee responds, becoming defensive, avoidant or open, and shapes Rounds 2 and 3.",w:"Consequences make the psychology of safety tangible."},
+{e:'#side',h:"Live behavioural rubric",b:"The Openness meter shows how safe the employee feels. The bars track Empathy, Inquiry, Accountability, Safety, Coaching and Specificity as you go.",w:"Immediate feedback shortens the learning loop."},
+{h:"Report, then try again",b:"After Round 3 you get a coaching profile plus an AI-style explanation of your moments that mattered. Then hit Try again and compare attempts.",w:"Practice → Feedback → Re-practice builds muscle memory (Days 8–30, Practise phase)."}];
+let S,prev=null;
+function init(){S={r:0,sc:[],path:[],open:50,br:null,log:[{w:'e',x:"Hi… you wanted to see me? (You've just spotted the same booking error again.)"}],busy:false};render()}
+const sum=()=>D.map((_,i)=>S.sc.reduce((a,s)=>a+s[i],0));
+const lvl=p=>p>=.72?'Strong':p>=.45?'Moderate':'Developing';
+function opts(){return S.r==0?R1:S.r==1?R2[S.br]:R3}
+function render(){
+if(S.r>2&&!S.busy&&S.done){return report()}
+const o=S.r<3?opts():[];const tot=Math.max(S.sc.length,1);
+document.getElementById('app').innerHTML=`<section><div class="card" id="scene"><div class="tag">Scenario · Round ${Math.min(S.r+1,3)} of 3</div>
+<div class="steps">${[0,1,2].map(i=>`<span class="${i<=S.r?'on':''}"></span>`).join('')}</div>
+<p><b>Priya</b> joined 3 weeks ago. She has made the same booking-process error for the third time, and a client refund is now pending. You have 10 minutes before your next call and you're frustrated.</p></div>
+<div class="card" style="margin-top:14px"><div class="tag">Conversation</div><div id="chat">${S.log.map(m=>`<div class="b ${m.w}"><i>${m.w=='m'?'You':'Priya'}</i>${m.x}</div>`).join('')}</div>
+<div id="choices">${S.busy?'<small class="mu">Priya is responding…</small>':S.r<3?`<div class="mu">${['What do you say?','How do you respond?','How do you close?'][S.r]}</div>`+o.map((x,i)=>`<button class="opt" onclick="pick(${i})"><b>${'ABCD'[i]}</b>${x.t}</button>`).join(''):'<button class="btn" onclick="S.done=1;render()">See my coaching report →</button>'}</div></div></section>
+<aside class="card" id="side"><div class="tag">Employee openness</div><div class="bar"><div style="width:${S.open}%;background:${S.open>60?'var(--ac)':S.open>35?'var(--wn)':'var(--bd)'}"></div></div>
+<div class="tag" style="margin:14px 0 6px">Live rubric</div>${D.map((d,i)=>{const p=S.sc.length?sum()[i]/(3*tot):0;return `<small>${d}</small><div class="bar"><div style="width:${p*100}%"></div></div>`}).join('')}</aside>`;
+const c=document.getElementById('chat');c.scrollTop=c.scrollHeight}
+function pick(i){if(S.busy)return;const x=opts()[i];
+if(S.r==0){S.br=x.k}S.sc.push(x.s);S.path.push({t:x.t,r:x.r,k:x.k2});
+S.open=Math.max(5,Math.min(100,S.open+Math.round((x.s.reduce((a,b)=>a+b,0)/6-1.2)*22)));
+if(x.o)S.disc=S.disc||S.r+1;if(S.r==0&&x.k=='exp')S.disc=1;
+S.log.push({w:'m',x:x.t});S.busy=true;render();
+setTimeout(()=>{S.log.push({w:'e',x:x.r});S.busy=false;S.r++;render()},900)}
+function report(){
+const s=sum(),ps=s.map(v=>v/9),all=s.reduce((a,b)=>a+b,0)/54;
+const best=ps.indexOf(Math.max(...ps)),worst=ps.indexOf(Math.min(...ps));
+const out=all>=.72?["Coaching breakthrough","Priya left with a plan, a safer relationship and clarity on the real problem."]:all>=.45?["Partial progress","Some ground was gained, but a Correct-first instinct or a missing standard limited the outcome."]:["Correction cycle continues","The mistake will likely recur. Priya learned to hide uncertainty, not resolve it."];
+const first=S.path[0].k;
+const disc=S.disc?`Priya disclosed the underlying process confusion in Round ${S.disc}.`+(S.disc>1?" A more exploratory opening could have surfaced it earlier.":" That early inquiry saved two rounds of dead-end conversation."):"Priya never disclosed the underlying process confusion, so the root cause is still hidden and the error is likely to recur.";
+const delta=prev?`<p class="mu">Previous attempt: ${Math.round(prev*100)}% → this attempt: <b>${Math.round(all*100)}%</b> (${all>=prev?'+':''}${Math.round((all-prev)*100)} pts)</p>`:'';
+document.getElementById('app').innerHTML=`<section style="grid-column:1/-1"><div class="card"><div class="tag">Your coaching profile</div><h2 style="font-family:Georgia,serif;margin:6px 0">${out[0]} · ${Math.round(all*100)}%</h2><p>${out[1]}</p>${delta}
+<table>${D.map((d,i)=>`<tr><td>${d}</td><td style="width:40%"><div class="bar" style="margin:0"><div style="width:${ps[i]*100}%"></div></div></td><td><span class="chip ${lvl(ps[i])}">${lvl(ps[i])}</span></td></tr>`).join('')}</table></div>
+<div class="card" style="margin-top:14px"><div class="tag">AI explanation</div>
+<p><b>Round 1.</b> ${INS[first]}</p><p><b>What happened.</b> ${disc}</p>
+<p><b>Strongest:</b> ${D[best]}. <b>Growth edge:</b> ${D[worst]}. ${WK[worst]}</p></div>
+<div class="card" style="margin-top:14px"><div class="tag">Your decision trail</div>${S.path.map((p,i)=>`<p><b>Round ${i+1}:</b> “${p.t}”<br><small class="mu">Priya: ${p.r}</small></p>`).join('')}
+<button class="btn" onclick="prev=${all};init()">↺ Try again</button> <button class="ghost" onclick="tour(0)">Replay tour</button></div></section>`}
+function tour(n){const ov=document.getElementById('ov');ov.style.display='block';if(S.done&&n==0){}
+const t=TOUR[n],sp=document.getElementById('sp'),tp=document.getElementById('tp');let r;
+const el=t.e&&document.querySelector(t.e);
+if(el){el.scrollIntoView({block:'center'});r=el.getBoundingClientRect();Object.assign(sp.style,{left:r.left-8+'px',top:r.top-8+'px',width:r.width+16+'px',height:r.height+16+'px'})}
+else{Object.assign(sp.style,{left:'50%',top:'50%',width:'0',height:'0'})}
+tp.innerHTML=`<div class="tag" style="color:#12b98a">Step ${n+1} / ${TOUR.length}</div><h3>${t.h}</h3><div>${t.b}</div><div class="why"><b>Strategic intent:</b> ${t.w}</div><div class="nav"><a onclick="end()">Skip tour</a><span>${n?'<a onclick="tour('+(n-1)+')">Back</a> &nbsp;':''}<button class="btn" onclick="${n<TOUR.length-1?'tour('+(n+1)+')':'end()'}">${n<TOUR.length-1?'Next →':'Start simulation'}</button></span></div>`;
+const h=tp.offsetHeight;let top,left;
+if(r){left=Math.min(Math.max(12,r.left),innerWidth-tp.offsetWidth-12);top=r.bottom+h+24<innerHeight?r.bottom+16:Math.max(12,r.top-h-16)}
+else{left=(innerWidth-tp.offsetWidth)/2;top=(innerHeight-h)/2}
+tp.style.left=left+'px';tp.style.top=top+'px'}
+function end(){document.getElementById('ov').style.display='none'}
+init();tour(0);
+</script></body></html>
